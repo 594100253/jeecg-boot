@@ -145,6 +145,13 @@
          	<artifactId>fastjson</artifactId>
          	<version>1.2.60</version>
         </dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.apache.kylin/kylin-jdbc -->
+		<dependency>
+			<groupId>org.apache.kylin</groupId>
+			<artifactId>kylin-jdbc</artifactId>
+			<version>2.6.2</version>
+		</dependency>
       
 		<!--mysql-->
 		<dependency>
