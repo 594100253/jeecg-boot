@@ -1,21 +1,22 @@
-.DS_Store
-node_modules
-/dist
+# Created by .ignore support plugin (hsz.mobi)
+### Vue template
+# gitignore template for Vue.js projects
+#
+# Recommended template: Node.gitignore
 
-# local env files
-.env.local
-.env.*.local
+# TODO: where does this rule come from?
+docs/_book
 
-# Log files
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# TODO: where does this rule come from?
+test/
 
-# Editor directories and files
+### Example user template template
+### Example user template
+
+# IntelliJ project files
 .idea
-.vscode
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw*
+*.iml
+out
+gen
+.gitignore
+node_modules/
