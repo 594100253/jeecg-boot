@@ -25,6 +25,21 @@ public class ItemDicServiceImpl extends ServiceImpl<ItemDicMapper, ItemDic> impl
 	private EventDicMapper eventDicMapper;
 
 	@Override
+	public List<Map> getEventItems(Integer eventId) {
+		String sql=" select " +
+				" id.if_checked ifChecked," +
+				" id.item_name as label," +
+				" id.db_column_name value"+
+			" from bu_event_dic ed" +
+			" JOIN bu_event_item ei on ei.event_id = ed.id" +
+			" JOIN bu_item_dic id on id.id = ei.item_id" +
+			" where ed.id = '"+eventId+"' " +
+			" order by id.sort_no,id.id ";
+		List<Map> list  = eventDicMapper.superSelect(sql);
+		return list;
+	}
+
+	@Override
 	public List<Map> getConcatHierarchyByEvent(Map map) {
 
 		// 没有必要 根据事件查询该事件下的维度，map.get("items")已经可以指定了是那些维度

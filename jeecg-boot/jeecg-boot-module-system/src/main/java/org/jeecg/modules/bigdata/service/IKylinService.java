@@ -19,4 +19,8 @@ public interface IKylinService extends IService<EventDic> {
 	// 单事件表格数据
 	Map<String,Object> querySingleEventTable(Map map);
 
+	// vip留存
+	Map<String,Object> getRetain(Map map);
+	Map<String,Object> getRetainChart(Map map);
+
 }

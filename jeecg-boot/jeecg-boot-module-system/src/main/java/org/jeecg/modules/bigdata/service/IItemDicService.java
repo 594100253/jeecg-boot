@@ -15,6 +15,9 @@ import java.util.Map;
 public interface IItemDicService extends IService<ItemDic> {
 
 
+
+	List<Map> getEventItems(Integer eventId);
+
 	/**
 	 * 根据事件名称 查询该事件绑定的 所有层级维度最底层的维度列和
 	 * 简单理解: 年 月 日 时 是层级维度，若维度有时，则返回 年-月-日-时

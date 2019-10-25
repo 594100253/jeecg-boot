@@ -49,14 +49,27 @@ public class KylinController {
 	@Autowired
 	private IKylinService kylinService;
 
-	@AutoLog(value = "事件配置表-分页列表查询")
-	@ApiOperation(value="事件配置表-分页列表查询", notes="事件配置表-分页列表查询")
+	@AutoLog(value = "kylin定制图表数据查询")
+	@ApiOperation(value="kylin定制图表数据查询", notes="kylin定制图表数据查询")
 	@PostMapping(value = "/line")
-	public Result<Map> queryPageList(@RequestBody Map<String,Object> param) {
+	public Result<Map> querySingleEventChart(@RequestBody Map<String,Object> param) {
 		Result<Map> result = new Result<Map>();
 		Map rmap = kylinService.querySingleEventChart(param);
 		result.setResult(rmap);
 		result.setSuccess(true);
 		return result;
 	}
+
+	@AutoLog(value = "kylin定制报表数据查询")
+	@ApiOperation(value="kylin定制图表数据查询", notes="kylin定制图表数据查询")
+	@PostMapping(value = "/table")
+	public Result<Map> querySingleEventTable(@RequestBody Map<String,Object> param) {
+		Result<Map> result = new Result<Map>();
+		Map rmap = kylinService.querySingleEventTable(param);
+		result.setResult(rmap);
+		result.setSuccess(true);
+		return result;
+	}
+
+
 }

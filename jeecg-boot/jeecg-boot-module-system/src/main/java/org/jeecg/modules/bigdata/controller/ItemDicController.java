@@ -72,6 +72,17 @@ public class ItemDicController {
 		result.setResult(pageList);
 		return result;
 	}
+
+	 @AutoLog(value = "根据事件ID获取对应的维度")
+	 @ApiOperation(value="根据事件ID获取对应的维度", notes="根据事件ID获取对应的维度")
+	 @GetMapping(value = "/getEventItems")
+	 public Result<List<Map>> getEventItems(@RequestParam(name="eventId") Integer eventId) {
+		 Result<List<Map>> result = new Result<List<Map>>();
+		 List<Map> list = itemDicService.getEventItems(eventId);
+		 result.setSuccess(true);
+		 result.setResult(list);
+		 return result;
+	 }
 	
 	/**
 	  *   添加
