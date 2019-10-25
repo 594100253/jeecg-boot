@@ -24,7 +24,7 @@
       },
       height: {
         type: Number,
-        default: 400
+        default: 350
       }
     },
     data(){
@@ -54,8 +54,18 @@
             textStyle: {
               fill: '#aaaaaa'
             },
-            formatter: function formatter(text) {
-              return text.replace(/(\d)(?=(?:\d{3})+$)/g, '$1,');
+            formatter: function formatter(num) {
+              // return text.replace(/(\d)(?=(?:\d{3})+$)/g, '$1,');
+              var v = num;
+              var numericSymbols = ['亿亿','万亿','亿','万'];
+              var numericSymbolMagnitude = ['10000000000000000','1000000000000','100000000','10000']
+              for (let i = 0; i < numericSymbols.length ; i++) {
+                if( num/numericSymbolMagnitude[i] !=0 && num%numericSymbolMagnitude[i] == 0 ){
+                  v = num.substring(0,num.length-(numericSymbolMagnitude[i].length-1)) + numericSymbols[i];
+                  break;
+                }
+              }
+              return v;
             }
           }
         });
