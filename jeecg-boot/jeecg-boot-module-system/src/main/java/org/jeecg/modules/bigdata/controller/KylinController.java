@@ -71,5 +71,26 @@ public class KylinController {
 		return result;
 	}
 
+	@AutoLog(value = "impala Vip留存图表数据查询")
+	@ApiOperation(value="impala Vip留存图表数据查询", notes="impala Vip留存图表数据查询")
+	@PostMapping(value = "/retainLine")
+	public Result<Map> getRetainChart(@RequestBody Map<String,Object> param) {
+		Result<Map> result = new Result<Map>();
+		Map rmap = kylinService.getRetainChart(param);
+		result.setResult(rmap);
+		result.setSuccess(true);
+		return result;
+	}
+
+	@AutoLog(value = "impala Vip留存报表数据查询")
+	@ApiOperation(value="impala Vip留存图表数据查询", notes="impala Vip留存图表数据查询")
+	@PostMapping(value = "/retainTable")
+	public Result<Map> getRetain(@RequestBody Map<String,Object> param) {
+		Result<Map> result = new Result<Map>();
+		Map rmap = kylinService.getRetain(param);
+		result.setResult(rmap);
+		result.setSuccess(true);
+		return result;
+	}
 
 }

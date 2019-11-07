@@ -1,13 +1,15 @@
 package org.jeecg.modules.bigdata.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.additional.query.impl.QueryChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.bigdata.entity.EventDic;
+import org.jeecg.modules.bigdata.entity.ItemDic;
 import org.jeecg.modules.bigdata.entity.TargetDic;
 import org.jeecg.modules.bigdata.mapper.EventDicMapper;
 import org.jeecg.modules.bigdata.service.IEventDicService;
 import org.jeecg.modules.bigdata.service.IKylinService;
+import org.jeecg.modules.bigdata.service.IReportService;
 import org.jeecg.modules.bigdata.service.ITargetDicService;
 import org.jeecg.modules.bigdata.util.DateUtils;
 import org.jeecg.modules.bigdata.util.KylinUtil;
@@ -25,7 +27,7 @@ import java.util.*;
  * @Version: V1.0
  */
 @Service
-public class KylinServiceImpl extends ServiceImpl<EventDicMapper, EventDic> implements IKylinService {
+public class ReportServiceImpl extends ServiceImpl<EventDicMapper, EventDic> implements IReportService {
 
 	@Autowired
 	private EventDicMapper eventDicMapper;
@@ -38,7 +40,7 @@ public class KylinServiceImpl extends ServiceImpl<EventDicMapper, EventDic> impl
 	private ItemDicServiceImpl itemDicService;
 
 	// 单事件 图表
-	public Map<String,Object> querySingleEventChart(Map map) {
+	public Map<String,Object> queryReportChart(Map map) {
 
 		Map returnMap = new HashMap();
 		// 获取事件
@@ -46,100 +48,54 @@ public class KylinServiceImpl extends ServiceImpl<EventDicMapper, EventDic> impl
 		Integer eventId = Integer.parseInt(map.get("eventId").toString());
 		EventDic eventDic= eventDicService.getById(eventId);
 
-		// 日期条件
-		StringBuffer whereSb = new StringBuffer();
+		// x轴
+		String xAxisName = (String) map.get("xName");
+
+		// 列
+		StringBuffer select = new StringBuffer();
+
+		List<String> target = (List) map.get("target");
+		String[] fields = new String[target.size()];
+		for (int i = 0; i < target.size() ; i++) {
+
+			TargetDic targetDic = targetDicService.getById(target.get(i));
+			if(select.length()>0){
+				select.append(",");
+			}
+			select.append(
+				targetDic.getTargetNameFunction() + " as " +" '"+targetDic.getTargetName()+"' "
+			);
+			fields[i] = targetDic.getTargetName();
+		}
+
+		// 条件
+		StringBuffer whereSb = new StringBuffer("\nwhere 1 = 1 ");
 		String[] dt = map.get("dt").toString().split("~");
 		whereSb.append(" AND DT BETWEEN '"+dt[0].trim()+"' and '"+dt[1].trim()+"' ");
 
-		// X轴
-		String xAxisName = (String) map.get("xAxisName");
-		JdbcTemplate jdbcTemplate = getJdbcTemplate();
-		String sqlxAxis = "select distinct "+xAxisName+" from "+eventDic.getEventTable()+" where 1=1 "+whereSb +" order by " +xAxisName;
-		List<Map<String, Object>> xAxisData = jdbcTemplate.queryForList(sqlxAxis);
-		if(xAxisData.size()==0){ // 无结果
-			return new HashMap();
-		}
-		List<String> xAxis = new ArrayList<>();
-		for (int i = 0; i < xAxisData.size() ; i++) {
-			StringBuffer xAxisSb = new StringBuffer();
-			xAxisData.get(i).forEach((key, value) ->{
-				if(key.equals("TIMEHOUR")){
-					xAxisSb.append(
-						" "+KylinUtil.zeroFill(key,value)+":00"
-					);
-				}else{
-					xAxisSb.append(xAxisSb.length()>0 ? "-" : "");
-					xAxisSb.append(
-						KylinUtil.zeroFill(key,value)
-					);
-				}
-			});
-			xAxis.add(xAxisSb.toString());
-		}
-		returnMap.put("xAxis",xAxis);
+		// 分组
+		StringBuffer groupBy = new StringBuffer( "\ngroup by " + xAxisName);
 
-		// 2. legend and series
-		List<String> targetName = null;
-		if(map.get("targetName") instanceof List){
-			targetName = (List) map.get("targetName");
-		}else if (map.get("targetName") instanceof String){
-			targetName = new ArrayList();
-			targetName.add(map.get("targetName").toString());
-		}
-		List<String> legendAr = new ArrayList<>();
-		StringBuffer queryDataSql = new StringBuffer();
-		List<Map> seriesAr = new ArrayList<>();
-		queryDataSql.append("select * from  (\n");
-		for (int i = 0; i < targetName.size() ; i++) {
+		// 排序
+		StringBuffer orderBy = new StringBuffer( "\norder by " + xAxisName);
 
-			TargetDic targetDic = targetDicService.getById(targetName.get(i));
+		StringBuffer sql = new StringBuffer();
+		sql.append(
+			"select \n"+
+			"\tconcat(cast(timeyear as string),'-',cast(timemonth as string),'-',cast(timeday as string)) as x," + select + "\n"+
+			"from " + eventDic.getEventTable() + whereSb + groupBy
+		);
+		JdbcTemplate jdbcTemplate = getJdbcTemplateImpala();
 
-			if(i>0){
-				queryDataSql.append("\n union \n");
-			}
-			queryDataSql.append("(\n");
-			queryDataSql.append("select "+xAxisName+","+
-				"'"+targetDic.getTargetName()+ "' targetType,"+
-				targetDic.getTargetNameFunction()+
-				" target from "+eventDic.getEventTable()+" where 1=1 " + whereSb+
-				" group by "+xAxisName +" " );
-			queryDataSql.append("\n)");
-		}
+		List<Map<String, Object>> data =jdbcTemplate.queryForList(sql.toString());
 
-		queryDataSql.append("\n) t order by "+xAxisName);
-		List<Map<String, Object>> queryList =jdbcTemplate.queryForList(queryDataSql.toString());
-
-		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < queryList.size() ; i++) {
-			if(xAxisName.toUpperCase().indexOf("TIMEYEAR")>-1){
-				sb.append(queryList.get(i).get("TIMEYEAR"));
-			}
-			if(xAxisName.toUpperCase().indexOf("TIMEMONTH")>-1){
-				sb.append("-"+queryList.get(i).get("TIMEMONTH"));
-			}
-			if(xAxisName.toUpperCase().indexOf("TIMEDAY")>-1){
-				sb.append("-"+queryList.get(i).get("TIMEDAY"));
-			}
-			if(xAxisName.toUpperCase().indexOf("TIMEHOUR")>-1){
-				sb.append(" "+queryList.get(i).get("TIMEHOUR")+":00");
-			}
-			if(map.get("eventId").equals("80") || map.get("eventId").equals("81")){
-				queryList.get(i).put(
-					"DATE",queryList.get(i).get("DT")
-				);
-			}else{
-				queryList.get(i).put(
-					"DATE",sb.toString()
-				);
-			}
-			sb.setLength(0);
-		}
-		returnMap.put("data",queryList);
+		returnMap.put("data",data);
+		returnMap.put("fields",fields);
 		return returnMap;
 	}
 
 	// 单事件 表格
-	public Map<String, Object> querySingleEventTable(Map map) {
+	public Map<String, Object> queryReportTable(Map map) {
 
 		Map returnMap = new HashMap();
 
@@ -148,132 +104,54 @@ public class KylinServiceImpl extends ServiceImpl<EventDicMapper, EventDic> impl
 		Integer eventId = Integer.parseInt(map.get("eventId").toString());
 		EventDic eventDic= eventDicService.getById(eventId);
 
-		List<String> itemTableNameAr = null;
-		if(map.get("itemName") instanceof List){
-			itemTableNameAr = (List) map.get("itemName");
-		}else if (map.get("itemName") instanceof String){
-			itemTableNameAr = new ArrayList();
-			itemTableNameAr.add(map.get("itemName").toString());
-		}
-		List<String> targetTableNameAr = null;
-		if(map.get("targetName") instanceof List){
-			targetTableNameAr = (List) map.get("targetName");
-		}else if (map.get("targetName") instanceof String){
-			targetTableNameAr = new ArrayList();
-			targetTableNameAr.add(map.get("targetName").toString());
-		}
-
-		// 日期条件
-		StringBuffer whereSb = new StringBuffer();
-		String[] dt = map.get("dt").toString().split("~");
-		whereSb.append(" AND DT BETWEEN '"+dt[0].trim()+"' and '"+dt[1].trim()+"' ");
+		List<String> itemIds = (List) map.get("item");
+		List<String> targetIds = (List) map.get("target");
 
 		// 根据 事件、维度和指标的条件，查询对应的 title（用于显示列名）、name(列key)、sqlname(sql的select列和groupby的列)
 		Map getHierarchyItemMap = new HashMap();
 		getHierarchyItemMap.put("eventId",eventId);
-		getHierarchyItemMap.put("itemIds",StringUtils.join(itemTableNameAr,","));
-		getHierarchyItemMap.put("targetIds",StringUtils.join(targetTableNameAr,","));
-		Map hierarchyItemMap =itemDicService.getConcatColumn(getHierarchyItemMap);
+		getHierarchyItemMap.put("itemIds",StringUtils.join(itemIds.toArray(),","));
+		getHierarchyItemMap.put("targetIds",StringUtils.join(targetIds.toArray(),","));
+		Map concatMap =itemDicService.getConcatColumn(getHierarchyItemMap);
 
-		// table 的 title、name
-		String[] tableTitleAr = hierarchyItemMap.get("tableTitle").toString().split(",");
-		String[] tableNameAr = hierarchyItemMap.get("tableName").toString().toUpperCase().split(",");
-		String[] tableNameWidthAr = hierarchyItemMap.get("width").toString().split(",");
-		returnMap.put("tableTitle",tableTitleAr);
-		returnMap.put("tableName",tableNameAr);
-		returnMap.put("tableNameWidth",tableNameWidthAr);
+		// Table列宽
+		String[] widths = concatMap.get("width").toString().split(",");
+		returnMap.put("widths",widths);
 
-		// 拼接 kylin Sql 查询数据
-		String selectName = hierarchyItemMap.get("selectName").toString();
-		String groupName = hierarchyItemMap.get("groupName").toString();
-		String fromName = eventDic.getEventTable();
-		StringBuffer queryDataSql = new StringBuffer();
-		queryDataSql.append(" select ");
-		queryDataSql.append(selectName);
-		queryDataSql.append(" from "+fromName);
-		queryDataSql.append(" where 1 = 1 " + whereSb);
+		// Table列标题
+		String[] tableTitle = concatMap.get("tableTitle").toString().split(",");
+		returnMap.put("tableTitle",tableTitle);
 
-		// 高级搜索 条件
-		if(map.containsKey("searchData")){
-			Map<String,Object> searchMap = (Map) map.get("searchData");
-			for (Map.Entry<String,Object> entry : searchMap.entrySet()){
-				List entryValueToList = (List) entry.getValue();
-				queryDataSql.append(" and "+entry.getKey() +" in ("+StringUtils.join(entryValueToList.toArray(),",")+")");
-			}
-		}
-		if(map.containsKey("siteid")){
-			queryDataSql.append(" and siteid in( "+map.get("siteid")+")");
-		}
-		if(map.containsKey("regchannelid")){
-			queryDataSql.append(" and regchannelid in( "+map.get("regchannelid")+")");
-		}
-		if(map.containsKey("lgnchannelid")){
-			queryDataSql.append(" and lgnchannelid in( "+map.get("lgnchannelid")+")");
-		}
-		if(map.containsKey("roomid")){
-			queryDataSql.append(" and roomid in( "+map.get("roomid")+")");
-		}
-		queryDataSql.append(" group by "+groupName);
-		queryDataSql.append(" order by " + groupName);
+		// Table列名
+		String[] tableName = concatMap.get("tableName").toString().split(",");
+		returnMap.put("tableName",tableName);
 
-		JdbcTemplate jdbcTemplate = getJdbcTemplate();
-		List<Map<String, Object>> queryList =jdbcTemplate.queryForList(queryDataSql.toString());
-		returnMap.put("records",queryList);
+		// Sql列
+		StringBuffer select = new StringBuffer();
+		select.append(concatMap.get("selectName").toString());
 
-		// 查询 需要格式化的指标
-//		List<TargetDic> fmtTargets = targetDicService.lambdaQuery()
-//			.select(TargetDic::getTargetAlias,TargetDic::getIfFormat)
-//			.isNotNull(TargetDic::getIfFormat)
-//			.ne(TargetDic::getIfFormat,"")
-//			.in(targetTableNameAr.size()>0,TargetDic::getTargetAlias,targetTableNameAr.toArray()).list();
+		// Sql条件
+		StringBuffer whereSb = new StringBuffer("\nwhere 1 = 1 ");
+		String[] dt = map.get("dt").toString().split("~");
+		whereSb.append(" AND DT BETWEEN '"+dt[0].trim()+"' and '"+dt[1].trim()+"' ");
 
-		// 层级维度特殊处理， 若有层级维度，最终只需展示本层级最底层的维度列db_column_sql
-		// 查询最底层的db_column_sql 即本次需要展示的列和逗号隔开，再拼接列，最终赋值给最底层维度上。（因为kelin 不支持 concat 只能再结果集特殊处理）
-		List<Map> listConcatHierarchy =itemDicService.getConcatHierarchyByEvent(getHierarchyItemMap);
-		for (int i = 0; i < queryList.size(); i++) {
-			// 层级格式化
-			for (int j = 0; j < listConcatHierarchy.size(); j++) {
-				StringBuffer sb = new StringBuffer();
-				String[] hierarchyName=listConcatHierarchy.get(j).get("hierarchyName").toString().toUpperCase().split(",");
-				for (int k = 0; k < hierarchyName.length ; k++) {
-					if(hierarchyName[k].equals("TIMEHOUR")){
-						sb.append(
-							" "+KylinUtil.zeroFill(
-								hierarchyName[k],
-								queryList.get(i).get(hierarchyName[k])
-							)+":00"
-						);
-					}else{
-						sb.append(sb.length() > 0 ? "-":"");
-						// 补零
-						sb.append(
-							KylinUtil.zeroFill(
-								hierarchyName[k],
-								queryList.get(i).get(hierarchyName[k])
-							)
-						);
-					}
-				}
-				queryList.get(i).put(hierarchyName[hierarchyName.length-1],sb.toString());
-			}
+		// Sql分组
+		StringBuffer groupBy = new StringBuffer( "\ngroup by ");
+		groupBy.append(concatMap.get("groupName").toString());
 
-			// 指标格式化
-//			for (int j = 0; j < fmtTargets.size() ; j++) {
-////				if( queryList.get(i).get( fmtTargets.get(j).getTargetAlias().toUpperCase() ) != null
-////					&& queryList.get(i-1).get( fmtTargets.get(j).getTargetAlias().toUpperCase() )!= null
-////				){
-////					queryList.get(i).put(
-////						fmtTargets.get(j).getTargetAlias().toUpperCase(),
-////
-////						(Double.parseDouble(queryList.get(i).get( fmtTargets.get(j).getTargetAlias().toUpperCase() ).toString() )
-////						- Double.parseDouble( queryList.get(i-1).get( fmtTargets.get(j).getTargetAlias().toUpperCase() ).toString() )
-////						) / Double.parseDouble( queryList.get(i-1).get( fmtTargets.get(j).getTargetAlias().toUpperCase() ).toString() )
-////						);
-////				}
-//			}
-		}
+		// Sql排序
+		StringBuffer orderBy = new StringBuffer( "\norder by " + itemIds);
 
+		StringBuffer sql = new StringBuffer();
+		sql.append(
+			"select \n"+
+				"\t"+ select + "\n"+
+			"from " + eventDic.getEventTable() + whereSb + groupBy
+		);
 
+		JdbcTemplate jdbcTemplate = getJdbcTemplateImpala();
+		List<Map<String, Object>> data =jdbcTemplate.queryForList(sql.toString());
+		returnMap.put("records",data);
 		return returnMap;
 	}
 
@@ -661,7 +539,7 @@ public class KylinServiceImpl extends ServiceImpl<EventDicMapper, EventDic> impl
 	public JdbcTemplate getJdbcTemplateImpala(){
 		DriverManagerDataSource dataSource=new DriverManagerDataSource();
 		dataSource.setDriverClassName("com.cloudera.impala.jdbc41.Driver");
-		dataSource.setUrl("jdbc:impala://47.99.111.178:21050/datatalk");
+		dataSource.setUrl("jdbc:impala://47.99.111.178:21050/datatalk/;auth=noSasl");
 		dataSource.setUsername("");
 		dataSource.setPassword("");
 		return new JdbcTemplate(dataSource);

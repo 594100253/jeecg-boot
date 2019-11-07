@@ -63,12 +63,12 @@ public class SysPermissionController {
 
 	/**
 	 * 加载数据节点
-	 * 
+	 *
 	 * @return
 	 */
 	@RequestMapping(value = "/list", method = RequestMethod.GET)
 	public Result<List<SysPermissionTree>> list() {
-        long start = System.currentTimeMillis();
+		long start = System.currentTimeMillis();
 		Result<List<SysPermissionTree>> result = new Result<>();
 		try {
 			LambdaQueryWrapper<SysPermission> query = new LambdaQueryWrapper<SysPermission>();
@@ -79,7 +79,7 @@ public class SysPermissionController {
 			getTreeList(treeList, list, null);
 			result.setResult(treeList);
 			result.setSuccess(true);
-            log.info("======获取全部菜单数据=====耗时:" + (System.currentTimeMillis() - start) + "毫秒");
+			log.info("======获取全部菜单数据=====耗时:" + (System.currentTimeMillis() - start) + "毫秒");
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 		}
@@ -94,7 +94,7 @@ public class SysPermissionController {
 	 */
 	@RequestMapping(value = "/getSystemMenuList", method = RequestMethod.GET)
 	public Result<List<SysPermissionTree>> getSystemMenuList() {
-        long start = System.currentTimeMillis();
+		long start = System.currentTimeMillis();
 		Result<List<SysPermissionTree>> result = new Result<>();
 		try {
 			LambdaQueryWrapper<SysPermission> query = new LambdaQueryWrapper<SysPermission>();
@@ -112,7 +112,7 @@ public class SysPermissionController {
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 		}
-        log.info("======获取一级菜单数据=====耗时:" + (System.currentTimeMillis() - start) + "毫秒");
+		log.info("======获取一级菜单数据=====耗时:" + (System.currentTimeMillis() - start) + "毫秒");
 		return result;
 	}
 
@@ -147,7 +147,7 @@ public class SysPermissionController {
 
 //	/**
 //	 * 查询用户拥有的菜单权限和按钮权限（根据用户账号）
-//	 * 
+//	 *
 //	 * @return
 //	 */
 //	@RequestMapping(value = "/queryByUser", method = RequestMethod.GET)
@@ -169,7 +169,7 @@ public class SysPermissionController {
 
 	/**
 	 * 查询用户拥有的菜单权限和按钮权限（根据TOKEN）
-	 * 
+	 *
 	 * @return
 	 */
 	@RequestMapping(value = "/getUserPermissionByToken", method = RequestMethod.GET)
@@ -202,14 +202,14 @@ public class SysPermissionController {
 			result.setResult(json);
 			result.success("查询成功");
 		} catch (Exception e) {
-			result.error500("查询失败:" + e.getMessage());  
+			result.error500("查询失败:" + e.getMessage());
 			log.error(e.getMessage(), e);
 		}
 		return result;
 	}
 
 	/**
-	  * 添加菜单
+	 * 添加菜单
 	 * @param permission
 	 * @return
 	 */
@@ -229,7 +229,7 @@ public class SysPermissionController {
 	}
 
 	/**
-	  * 编辑菜单
+	 * 编辑菜单
 	 * @param permission
 	 * @return
 	 */
@@ -249,7 +249,7 @@ public class SysPermissionController {
 	}
 
 	/**
-	  * 删除菜单
+	 * 删除菜单
 	 * @param id
 	 * @return
 	 */
@@ -269,7 +269,7 @@ public class SysPermissionController {
 	}
 
 	/**
-	  * 批量删除菜单
+	 * 批量删除菜单
 	 * @param ids
 	 * @return
 	 */
@@ -278,7 +278,7 @@ public class SysPermissionController {
 	public Result<SysPermission> deleteBatch(@RequestParam(name = "ids", required = true) String ids) {
 		Result<SysPermission> result = new Result<>();
 		try {
-            String[] arr = ids.split(",");
+			String[] arr = ids.split(",");
 			for (String id : arr) {
 				if (oConvertUtils.isNotEmpty(id)) {
 					sysPermissionService.deletePermission(id);
@@ -294,7 +294,7 @@ public class SysPermissionController {
 
 	/**
 	 * 获取全部的权限树
-	 * 
+	 *
 	 * @return
 	 */
 	@RequestMapping(value = "/queryTreeList", method = RequestMethod.GET)
@@ -326,7 +326,7 @@ public class SysPermissionController {
 
 	/**
 	 * 异步加载数据节点
-	 * 
+	 *
 	 * @return
 	 */
 	@RequestMapping(value = "/queryListAsync", method = RequestMethod.GET)
@@ -349,7 +349,7 @@ public class SysPermissionController {
 
 	/**
 	 * 查询角色授权
-	 * 
+	 *
 	 * @return
 	 */
 	@RequestMapping(value = "/queryRolePermission", method = RequestMethod.GET)
@@ -367,7 +367,7 @@ public class SysPermissionController {
 
 	/**
 	 * 保存角色授权
-	 * 
+	 *
 	 * @return
 	 */
 	@RequestMapping(value = "/saveRolePermission", method = RequestMethod.POST)
@@ -426,9 +426,9 @@ public class SysPermissionController {
 
 		}
 	}
-	
+
 	/**
-	  *  获取权限JSON数组
+	 *  获取权限JSON数组
 	 * @param jsonArray
 	 * @param metaList
 	 * @param parentJson
@@ -446,7 +446,7 @@ public class SysPermissionController {
 	}
 
 	/**
-	  *  获取权限JSON数组
+	 *  获取权限JSON数组
 	 * @param jsonArray
 	 * @param metaList
 	 * @param parentJson
@@ -467,7 +467,7 @@ public class SysPermissionController {
 		}
 	}
 	/**
-	  *  获取菜单JSON数组
+	 *  获取菜单JSON数组
 	 * @param jsonArray
 	 * @param metaList
 	 * @param parentJson
@@ -596,7 +596,7 @@ public class SysPermissionController {
 	/**
 	 * 判断是否外网URL 例如： http://localhost:8080/jeecg-boot/swagger-ui.html#/ 支持特殊格式： {{
 	 * window._CONFIG['domianURL'] }}/druid/ {{ JS代码片段 }}，前台解析会自动执行JS代码片段
-	 * 
+	 *
 	 * @return
 	 */
 	private boolean isWWWHttpUrl(String url) {
@@ -609,7 +609,7 @@ public class SysPermissionController {
 	/**
 	 * 通过URL生成路由name（去掉URL前缀斜杠，替换内容中的斜杠‘/’为-） 举例： URL = /isystem/role RouteName =
 	 * isystem-role
-	 * 
+	 *
 	 * @return
 	 */
 	private String urlToRouteName(String url) {
@@ -629,7 +629,7 @@ public class SysPermissionController {
 
 	/**
 	 * 根据菜单id来获取其对应的权限数据
-	 * 
+	 *
 	 * @param sysPermissionDataRule
 	 * @return
 	 */
@@ -644,7 +644,7 @@ public class SysPermissionController {
 
 	/**
 	 * 添加菜单权限数据
-	 * 
+	 *
 	 * @param sysPermissionDataRule
 	 * @return
 	 */
@@ -677,7 +677,7 @@ public class SysPermissionController {
 
 	/**
 	 * 删除菜单权限数据
-	 * 
+	 *
 	 * @param sysPermissionDataRule
 	 * @return
 	 */
@@ -696,7 +696,7 @@ public class SysPermissionController {
 
 	/**
 	 * 查询菜单权限数据
-	 * 
+	 *
 	 * @param sysPermissionDataRule
 	 * @return
 	 */

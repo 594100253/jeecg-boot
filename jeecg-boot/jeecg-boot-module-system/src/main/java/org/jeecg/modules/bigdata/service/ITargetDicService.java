@@ -13,5 +13,8 @@ import java.util.Map;
  * @Version: V1.0
  */
 public interface ITargetDicService extends IService<TargetDic> {
+
 	List<Map> getEventTargets(Integer eventId);
+
+	List<Map> getEventTargetIds(Integer eventId);
 }

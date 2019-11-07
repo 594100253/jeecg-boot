@@ -36,4 +36,16 @@ public class TargetDicServiceImpl extends ServiceImpl<TargetDicMapper, TargetDic
 
 		return list;
 	}
+
+	@Override
+	public List<Map> getEventTargetIds(Integer eventId) {
+		String sql="select td.target_name label,td.id value,td.if_checked ifChecked  from bu_event_dic ed " +
+			"LEFT JOIN bu_event_target et on et.event_id = ed.id " +
+			"LEFT JOIN bu_target_dic td on td.id = et.target_id " +
+			"where ed.id = '"+eventId+"' " +
+			"order by td.sort_no";
+		List<Map> list  = eventDicMapper.superSelect(sql);
+
+		return list;
+	}
 }

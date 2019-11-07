@@ -83,6 +83,17 @@ public class TargetDicController {
 		 result.setResult(list);
 		 return result;
 	 }
+
+	 @AutoLog(value = "根据事件ID获取对应的指标ID")
+	 @ApiOperation(value="根据事件ID获取对应的指标ID", notes="根据事件ID获取对应的指标ID")
+	 @GetMapping(value = "/getEventTargetIds")
+	 public Result<List<Map>> getEventTargetIds(@RequestParam(name="eventId") Integer eventId) {
+		 Result<List<Map>> result = new Result<List<Map>>();
+		 List<Map> list = targetDicService.getEventTargetIds(eventId);
+		 result.setSuccess(true);
+		 result.setResult(list);
+		 return result;
+	 }
 	
 	/**
 	  *   添加

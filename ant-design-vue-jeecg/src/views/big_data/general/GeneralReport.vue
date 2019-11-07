@@ -26,7 +26,7 @@
       </div>
 
       <a-row :gutter="0" :style="{minHeight:'390px'}">
-        <g2-line :chartData="serverData" ref="G2Line" :title="title"></g2-line>
+        <g2-line :chartData="serverData" ref="G2Line" :fields="fields" :retains="retains" :title="title"></g2-line>
       </a-row>
     </a-card>
 
@@ -59,7 +59,7 @@
 </template>
 
 <script>
-  import G2Line from '@/components/chart/Line'
+  import G2Line from '@/components/chart/Line2'
   import TargetSelect from '../components/TargetSelect'
   import ItemSelect from '../components/ItemSelect'
   import { postAction } from '@/api/manage'
@@ -88,28 +88,30 @@
         // 数据集
         serverData: [
         ],
+        fields:[],
+        retains:'x',
         // 字典 data
         itemSelectData:[],
         targetSelectData:[],
         eventId:"",
         title:'',
         url: {
-          getChart: "/bigdata/kylin/line",
-          getTable: "/bigdata/kylin/table",
+          getChart: "/bigdata/report/line",
+          getTable: "/bigdata/report/table",
           getItem:"/bigdata/itemDic/getEventItemIds",
           getTarget:"/bigdata/targetDic/getEventTargetIds",
         },
         chartsParam:{
           dt:moment().subtract('days', 6).startOf('day').format("YYYY-MM-DD")+"~"+moment().subtract('days', 0).startOf('day').format("YYYY-MM-DD"),
           eventId: "1",
-          targetName: [],
-          xAxisName: 'timeyear,timemonth,timeday'
+          target: [],
+          xName: 'timeyear,timemonth,timeday'
         },
         tableParam:{
           dt:moment().subtract('days', 6).startOf('day').format("YYYY-MM-DD")+"~"+moment().subtract('days', 0).startOf('day').format("YYYY-MM-DD"),
           eventId: "1",
-          targetName: [],
-          itemName: []
+          target: [],
+          item: []
         },
         tableCol:[],
         tableData:[]
@@ -132,7 +134,7 @@
 
       // 数据问题，临时处理下
       if(params.eventId==80 || params.eventId==81){
-        this.chartsParam.xAxisName="DT";
+        this.chartsParam.xName="DT";
         this.ifGroupDate=false;
       }
 
@@ -170,7 +172,7 @@
         this.chartsParam.dt= this.chartDateVal[0].format("YYYY-MM-DD")+"~"+this.chartDateVal[1].format("YYYY-MM-DD")
       }, // 日期筛选（快捷切换）
       chartXChange(v){
-        this.chartsParam.xAxisName = v;
+        this.chartsParam.xName = v;
       }, // 切换 X轴
       loadChart() {
         postAction(this.url.getChart,this.chartsParam).then((res) => {
@@ -178,6 +180,7 @@
           if (res.success) {
             if(Object.keys(res.result).length!=0){
               this.serverData=res.result.data;
+              this.fields = res.result.fields;
             }else{
               this.$message.warning("没有查找到数据请尝试调整时间段或筛选条件");
             }
@@ -240,13 +243,13 @@
               if(i==0){
                 //col['fixed']='left';  由于列是动态，如过列宽度少于页面显示宽度，不支持 fixed。暂不使用
               }
-              col['width'] = parseInt(res.result.tableNameWidth[i]);
+              col['width'] = parseInt(res.result.widths[i]);
               if(i<res.result.tableName.length-1){
               }
-              tableWidth+=parseInt(res.result.tableNameWidth[i]);
-              col['customRender']=function (t,r,index) {
-                return t.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,');
-              }
+              tableWidth+=parseInt(res.result.widths[i]);
+              // col['customRender']=function (t,r,index) {
+              //   return t.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,');
+              // }
               tableColAr.push(col);
               this.tableScroll = {x:tableWidth};
             }
@@ -264,15 +267,17 @@
       }, // 最大日期
       targetSelectChange(selectName,v) {
        if(selectName == "chart"){
-         this.chartsParam.targetName = v;
+         this.chartsParam.target = v;
          //this.loadChart();
        }else if(selectName == "table"){
-         this.tableParam.targetName = v;
+         this.tableParam.target = v;
          //this.loadTable();
        }
+        console.log(selectName,v)
+        console.log(this.chartsParam)
       }, // 指标选中回调
       itemSelectChange(v){
-        this.tableParam.itemName = v;
+        this.tableParam.item = v;
         //this.loadTable();
       }, // 维度选中回调
       getEventItem:function () {
@@ -286,7 +291,7 @@
             }
             if(res.result.length>0){
               this.itemSelectData=res.result;
-              this.tableParam.itemName = defaultValue;
+              this.tableParam.item = defaultValue;
               this.$refs.tableItemSelect.setDefVal(defaultValue);
             }else{
               this.$message.warning("未配置维度，请联系管理员！");
@@ -307,8 +312,8 @@
             this.$refs.chartTargetSelect.setDefVal(defaultValue);
             if(res.result.length>0){
               this.targetSelectData=res.result;
-              this.tableParam.targetName = defaultValue;
-              this.chartsParam.targetName = defaultValue;
+              this.tableParam.target = defaultValue;
+              this.chartsParam.target = defaultValue;
             }else{
               this.$message.warning("未配置维度，请联系管理员！");
             }
@@ -320,8 +325,8 @@
           function(){
             if(
               this.chartsParam.dt!=""
-              && this.chartsParam.targetName.length > 0
-              && this.chartsParam.xAxisName.length > 0
+              && this.chartsParam.target.length > 0
+              && this.chartsParam.xName.length > 0
             ){
               this.loadChart();
             }
@@ -330,8 +335,8 @@
           function(){
             if(
               this.tableParam.dt!=""
-              && this.tableParam.targetName.length > 0
-              && this.tableParam.itemName.length > 0
+              && this.tableParam.target.length > 0
+              && this.tableParam.item.length > 0
             ){
               this.loadTable();
             }

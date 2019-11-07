@@ -18,6 +18,8 @@ public interface IItemDicService extends IService<ItemDic> {
 
 	List<Map> getEventItems(Integer eventId);
 
+	List<Map> getEventItemIds(Integer eventId);
+
 	/**
 	 * 根据事件名称 查询该事件绑定的 所有层级维度最底层的维度列和
 	 * 简单理解: 年 月 日 时 是层级维度，若维度有时，则返回 年-月-日-时
@@ -26,6 +28,8 @@ public interface IItemDicService extends IService<ItemDic> {
 	 * @return 层级维度ID，层级维度db_column_name,层级展示的所有列
 	 */
 	List<Map> getConcatHierarchyByEvent(Map map);
+
+	Map getConcatColumn(Map map);
 
 	/**
 	 * 查询指定事件的 维度(层级维度和非层级维度)和指标
